@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { corsHeaders, errorResponse, jsonResponse } from "../_shared/cors.ts";
-import { getUserClient, requireUserId } from "../_shared/supabase.ts";
+import { getUserClient, requireUserId, HttpError } from "../_shared/supabase.ts";
 import { loadLifeContext, lifeContextPrompt } from "../_shared/context.ts";
 import { claudeStructured } from "../_shared/claude.ts";
 import { reflectionOutputSchema } from "../_shared/schema.ts";
@@ -67,6 +67,7 @@ Deno.serve(async (req) => {
       toolDescription: "Submit the weekly reflection.",
       schema: reflectionOutputSchema,
       maxTokens: 3000,
+      tier: "heavy",
     });
 
     await client.from("reflections").upsert(
@@ -83,6 +84,7 @@ Deno.serve(async (req) => {
     return jsonResponse(result);
   } catch (e) {
     console.error("[weekly-reflection] error", e);
-    return errorResponse((e as Error).message, 500);
+    const status = e instanceof HttpError ? e.status : 500;
+    return errorResponse((e as Error).message, status);
   }
 });

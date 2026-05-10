@@ -1,6 +1,6 @@
 // deno-lint-ignore-file no-explicit-any
 import { corsHeaders, errorResponse, jsonResponse } from "../_shared/cors.ts";
-import { getUserClient, requireUserId } from "../_shared/supabase.ts";
+import { getUserClient, requireUserId, HttpError } from "../_shared/supabase.ts";
 import { loadLifeContext, lifeContextPrompt } from "../_shared/context.ts";
 import { claudeStructured } from "../_shared/claude.ts";
 import { adjustDayOutputSchema } from "../_shared/schema.ts";
@@ -93,6 +93,7 @@ Deno.serve(async (req) => {
     return jsonResponse({ blocks: result.blocks, diff_summary: result.diff_summary });
   } catch (e) {
     console.error("[adjust-day] error", e);
-    return errorResponse((e as Error).message, 500);
+    const status = e instanceof HttpError ? e.status : 500;
+    return errorResponse((e as Error).message, status);
   }
 });
